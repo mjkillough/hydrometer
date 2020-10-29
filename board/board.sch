@@ -14,7 +14,7 @@ Comment3 ""
 Comment4 ""
 $EndDescr
 $Comp
-L board-rescue:CONN_01X08 P1
+L board-rescue:CONN_01X08-board-rescue P1
 U 1 1 5763EB78
 P 9650 1400
 F 0 "P1" H 9650 1850 50  0000 C CNN
@@ -25,7 +25,7 @@ F 3 "" H 9650 1400 50  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L board-rescue:CONN_01X08 P2
+L board-rescue:CONN_01X08-board-rescue P2
 U 1 1 5763EBF2
 P 10100 1400
 F 0 "P2" H 10100 1850 50  0000 C CNN

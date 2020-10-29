@@ -84,11 +84,11 @@ X C 3 200 -100 100 L 50 50 1 1 P
 ENDDRAW
 ENDDEF
 #
-# board-rescue_CONN_01X08
+# board-rescue_CONN_01X08-board-rescue
 #
-DEF board-rescue_CONN_01X08 P 0 40 Y N 1 F N
+DEF board-rescue_CONN_01X08-board-rescue P 0 40 Y N 1 F N
 F0 "P" 0 450 50 H V C CNN
-F1 "board-rescue_CONN_01X08" 100 0 50 V V C CNN
+F1 "board-rescue_CONN_01X08-board-rescue" 100 0 50 V V C CNN
 F2 "" 0 0 60 H V C CNN
 F3 "" 0 0 60 H V C CNN
 $FPLIST
