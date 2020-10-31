@@ -2,7 +2,7 @@
 
   (general
     (thickness 1.6)
-    (drawings 74)
+    (drawings 75)
     (tracks 43)
     (zones 0)
     (modules 8)
@@ -447,6 +447,9 @@
     )
   )
 
+  (gr_text JLCJLCJLCJLC (at 138.938 117.856) (layer B.SilkS)
+    (effects (font (size 1 1) (thickness 0.15)) (justify mirror))
+  )
   (gr_text +OUT-IN (at 129.78 90.39) (layer F.SilkS)
     (effects (font (size 1 1) (thickness 0.15)))
   )
