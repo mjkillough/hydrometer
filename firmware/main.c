@@ -7,16 +7,35 @@
 #include <esp/uart.h>
 #include <esp8266.h>
 
-const int gpio = 2;
+#include <i2c/i2c.h>
+
+#include "mpu.h"
+
+#define I2C_BUS 0
+#define SCL_PIN 2
+#define SDA_PIN 0
 
 void blink(void *pvParameters)
 {
-    gpio_enable(gpio, GPIO_OUTPUT);
+    int result = i2c_init(I2C_BUS, SCL_PIN, SDA_PIN, I2C_FREQ_100K);
+    printf("i2c_init = %d\n", result);
+
+    mpu_init();
 
     while(1) {
-        gpio_write(gpio, 1);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-        gpio_write(gpio, 0);
+        mpu_wakeup();
+
+        // The accelerometer data is only available in the register
+        // after the I2C bus is left idle.
+        vTaskDelay(100 / portTICK_PERIOD_MS);
+
+        struct mpu_accel accel = {0};
+        mpu_read_accel(&accel);
+
+        mpu_sleep();
+
+        printf("accel (%d, %d, %d)\n", accel.x, accel.y, accel.z);
+
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
