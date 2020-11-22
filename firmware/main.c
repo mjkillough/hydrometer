@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <math.h>
 
 #include <FreeRTOS.h>
 #include <task.h>
@@ -15,6 +16,46 @@
 #define SCL_PIN 2
 #define SDA_PIN 0
 
+#define HYDROMETER_DEBUG true
+
+#ifdef HYDROMETER_DEBUG
+#include <stdio.h>
+#define debug(fmt, ...) printf("%s: " fmt "\n", "HYDROMETER", ## __VA_ARGS__)
+#else
+#define debug(fmt, ...)
+#endif
+
+int measure_angle(float *angle) {
+    int err = 0;
+
+    err = mpu_wakeup();
+    if (err) {
+        debug("failed to wake-up mpu: %d", err);
+        return err;
+    }
+
+    // The accelerometer data is only available in the register
+    // after the I2C bus is left idle.
+    vTaskDelay(10 / portTICK_PERIOD_MS);
+
+    struct mpu_accel a = {0};
+    err = mpu_read_accel(&a);
+    if (err) {
+        debug("failed to read accel: %d", err);
+        return err;
+    }
+
+    err = mpu_sleep();
+    if (err) {
+        debug("failed to put mpu to sleep: %d", err);
+        return err;
+    }
+
+    *angle = acos(a.z / sqrt(a.x * a.x + a.y * a.y + a.z * a.z)) * 180.0 / M_PI;
+
+    return 0;
+}
+
 void blink(void *pvParameters)
 {
     int result = i2c_init(I2C_BUS, SCL_PIN, SDA_PIN, I2C_FREQ_100K);
@@ -23,18 +64,9 @@ void blink(void *pvParameters)
     mpu_init();
 
     while(1) {
-        mpu_wakeup();
-
-        // The accelerometer data is only available in the register
-        // after the I2C bus is left idle.
-        vTaskDelay(100 / portTICK_PERIOD_MS);
-
-        struct mpu_accel accel = {0};
-        mpu_read_accel(&accel);
-
-        mpu_sleep();
-
-        printf("accel (%d, %d, %d)\n", accel.x, accel.y, accel.z);
+        float angle = 0;
+        measure_angle(&angle);
+        printf("angle = %f\n", angle);
 
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
