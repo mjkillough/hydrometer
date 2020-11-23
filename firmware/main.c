@@ -9,8 +9,10 @@
 #include <esp8266.h>
 
 #include <i2c/i2c.h>
+#include <ssid_config.h>
 
 #include "mpu.h"
+#include "http.h"
 
 #define I2C_BUS 0
 #define SCL_PIN 2
@@ -58,15 +60,29 @@ int measure_angle(float *angle) {
 
 void blink(void *pvParameters)
 {
+    vTaskDelay(10000 / portTICK_PERIOD_MS);
+
     int result = i2c_init(I2C_BUS, SCL_PIN, SDA_PIN, I2C_FREQ_100K);
     printf("i2c_init = %d\n", result);
 
     mpu_init();
 
     while(1) {
-        float angle = 0;
-        measure_angle(&angle);
-        printf("angle = %f\n", angle);
+        /* float angle = 0; */
+        /* measure_angle(&angle); */
+        /* printf("angle = %f\n", angle); */
+
+        struct http_request req = {
+            .hostname = "192.168.86.92",
+            .port = "8080",
+            .path = "/path",
+            .len = 5,
+            .body = "Hello",
+        };
+        struct http_response resp = {0};
+        int err = http_post(&req, &resp);
+        printf("err = %d\n", err);
+        printf("status = %d\n", resp.status_code);
 
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
@@ -76,6 +92,13 @@ void user_init(void)
 {
     uart_set_baud(0, 115200);
 
-    xTaskCreate(blink, "blink", 256, NULL, 2, NULL);
+    struct sdk_station_config config = {
+        .ssid = WIFI_SSID,
+        .password = WIFI_PASS,
+    };
+    sdk_wifi_set_opmode(STATION_MODE);
+    sdk_wifi_station_set_config(&config);
+
+    xTaskCreate(blink, "blink", 384, NULL, 2, NULL);
 }
 
