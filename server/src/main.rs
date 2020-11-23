@@ -4,6 +4,7 @@ use serde::Deserialize;
 #[derive(Debug, Deserialize)]
 struct Measurement {
     angle: f64,
+    temp: f64,
 }
 
 #[post("/path")]
