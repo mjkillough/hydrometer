@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 struct measurement {
+    double timestamp;
     float angle;
     float temp;
 };

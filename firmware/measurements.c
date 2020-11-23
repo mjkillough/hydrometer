@@ -14,7 +14,7 @@
 #endif
 
 static int measurement_to_json(struct measurement *m, FILE *f) {
-    int err = fprintf(f, "\t{\"angle\": %f, \"temp\": %f}", m->angle, m->temp);
+    int err = fprintf(f, "\t{\"timestamp\": %f, \"angle\": %f, \"temp\": %f}", m->timestamp, m->angle, m->temp);
     if (err < 0) {
         return err;
     }

@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <sys/time.h>
 
 #include <FreeRTOS.h>
 #include <task.h>
@@ -76,7 +77,12 @@ static int make_measurements(struct measurements *m) {
     float temp = ds18b20_measure_and_read(DS18B20_PIN, DS18B20_ANY);
     temp /= 10;
 
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    double timestamp = difftime(tv.tv_sec, 0);
+
     struct measurement measurement = {
+        .timestamp = timestamp,
         .angle = angle,
         .temp = temp,
     };
@@ -168,6 +174,11 @@ void user_init(void)
     int err = 0;
 
     uart_set_baud(0, 115200);
+
+    struct timeval tv;
+    tv.tv_sec = 1518798027;  /* 2018-02-16T16:20:27+00:00 */
+    tv.tv_usec = 0;
+    settimeofday(&tv, NULL);
 
     struct sdk_station_config config = {
         .ssid = WIFI_SSID,
