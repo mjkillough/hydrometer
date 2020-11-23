@@ -125,19 +125,17 @@ done:
     return err;
 }
 
-void blink(void *pvParameters)
+void loop(void *pvParameters)
 {
-    vTaskDelay(10000 / portTICK_PERIOD_MS);
+    int err = 0;
 
     struct measurements *m = NULL;
-    measurements_new(&m, 5);
+    err = measurements_new(&m, 5);
+    if (err) {
+        debug("measurements_new error: %d", err);
+        return;
+    }
 
-    int result = i2c_init(I2C_BUS, SCL_PIN, SDA_PIN, I2C_FREQ_100K);
-    printf("i2c_init = %d\n", result);
-
-    mpu_init();
-
-    int err = 0;
     while(1) {
         err = make_measurements(m);
         if (err) {
@@ -157,6 +155,8 @@ void blink(void *pvParameters)
 
 void user_init(void)
 {
+    int err = 0;
+
     uart_set_baud(0, 115200);
 
     struct sdk_station_config config = {
@@ -166,6 +166,14 @@ void user_init(void)
     sdk_wifi_set_opmode(STATION_MODE);
     sdk_wifi_station_set_config(&config);
 
-    xTaskCreate(blink, "blink", 384, NULL, 2, NULL);
+    err = i2c_init(I2C_BUS, SCL_PIN, SDA_PIN, I2C_FREQ_100K);
+    if (err) {
+        debug("i2c_init error: %d", err);
+        return;
+    }
+
+    mpu_init();
+
+    xTaskCreate(loop, "loop", 384, NULL, 2, NULL);
 }
 
