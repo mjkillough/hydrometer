@@ -10,6 +10,7 @@
 #include <esp8266.h>
 
 #include <i2c/i2c.h>
+#include <ds18b20/ds18b20.h>
 #include <ssid_config.h>
 
 #include "measurements.h"
@@ -19,6 +20,8 @@
 #define I2C_BUS 0
 #define SCL_PIN 2
 #define SDA_PIN 0
+
+#define DS18B20_PIN 12
 
 #define HYDROMETER_DEBUG true
 
@@ -70,7 +73,14 @@ static int make_measurements(struct measurements *m) {
         return err;
     }
 
-    measurements_push(m, &(struct measurement){.angle = angle});
+    float temp = ds18b20_measure_and_read(DS18B20_PIN, DS18B20_ANY);
+    temp /= 10;
+
+    struct measurement measurement = {
+        .angle = angle,
+        .temp = temp,
+    };
+    measurements_push(m, &measurement);
 
     return 0;
 }

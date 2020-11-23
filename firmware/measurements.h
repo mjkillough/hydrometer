@@ -5,6 +5,7 @@
 
 struct measurement {
     float angle;
+    float temp;
 };
 
 struct measurements;
