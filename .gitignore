@@ -3,3 +3,6 @@ tags
 
 firmware/firmware
 firmware/build
+
+server/target
+
