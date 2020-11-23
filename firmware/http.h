@@ -7,6 +7,7 @@ struct http_request {
     const char *port;
     const char *path;
 
+    const char *content_type;
     const size_t len;
     const char *body;
 };

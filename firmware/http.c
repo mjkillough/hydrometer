@@ -148,10 +148,12 @@ int http_post(struct http_request *req, struct http_response *resp) {
         "Host: %s\r\n"
         "User-Agent: hydrometer/0.1 esp-open-rtos esp8266\r\n"
         "Connection: close\r\n"
+        "Content-Type: %s\r\n"
         "Content-Length: %d\r\n"
         "\r\n",
         req->path,
         req->hostname,
+        req->content_type,
         req->len
     );
     err = writeall(fd, headers, strlen(headers));

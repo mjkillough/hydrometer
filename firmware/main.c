@@ -51,20 +51,33 @@ struct measurements {
 };
 
 static int
-measurements_new(struct measurements *m, size_t capacity) {
+measurements_new(struct measurements **m, size_t capacity) {
     struct measurement *data = calloc(capacity, sizeof(*data));
     if (!data) {
         debug("failed to allocate measurements data");
         return -1;
     }
 
-    *m = (struct measurements){
+    *m = malloc(sizeof(struct measurements));
+    if (!*m) {
+        debug("failed to allocate struct measurements");
+        return -1;
+    }
+
+    **m = (struct measurements){
         .capacity = capacity,
         .next = 0,
         .full = false,
         .data = data
     };
+
     return 0;
+}
+
+static void
+measurements_free(struct measurements *m) {
+    free(m->data);
+    free(m);
 }
 
 static void
@@ -176,30 +189,60 @@ void blink(void *pvParameters)
 {
     vTaskDelay(10000 / portTICK_PERIOD_MS);
 
+    struct measurements *m = NULL;
+    measurements_new(&m, 5);
+
     int result = i2c_init(I2C_BUS, SCL_PIN, SDA_PIN, I2C_FREQ_100K);
     printf("i2c_init = %d\n", result);
 
     mpu_init();
 
     while(1) {
-        /* float angle = 0; */
-        /* measure_angle(&angle); */
-        /* printf("angle = %f\n", angle); */
+
+        float angle = 0;
+        measure_angle(&angle);
+
+        measurements_push(m, &(struct measurement){.angle = angle});
+
+        char *buffer = NULL;
+        size_t len = 0;
+
+        FILE *f = open_memstream(&buffer, &len);
+        if (f == NULL) {
+            debug("open_memstream: %s", strerror(errno));
+            return;
+        }
+
+        int err = measurements_to_json(m, f);
+        if (err) {
+            return;
+        }
+
+        fflush(f);
+        fclose(f);
 
         struct http_request req = {
             .hostname = "192.168.86.92",
             .port = "8080",
             .path = "/path",
-            .len = 5,
-            .body = "Hello",
+
+            .content_type = "application/json",
+            .len = len,
+            .body = buffer,
         };
         struct http_response resp = {0};
-        int err = http_post(&req, &resp);
+        err = http_post(&req, &resp);
         printf("err = %d\n", err);
         printf("status = %d\n", resp.status_code);
 
+        if (resp.status_code == 200) {
+            measurements_clear(m);
+        }
+
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
+
+    measurements_free(m);
 }
 
 void user_init(void)
