@@ -18,3 +18,5 @@ struct http_response {
 
 int http_post(struct http_request *req, struct http_response *resp);
 
+bool http_is_success(struct http_response *resp);
+

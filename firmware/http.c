@@ -182,3 +182,7 @@ done:
     return err;
 }
 
+bool http_is_success(struct http_response *resp) {
+    return resp->status_code >= 200 && resp->status_code < 300;
+}
+

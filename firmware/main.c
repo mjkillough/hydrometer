@@ -60,6 +60,71 @@ int measure_angle(float *angle) {
     return 0;
 }
 
+static int make_measurements(struct measurements *m) {
+    int err = 0;
+
+    float angle = 0;
+    err = measure_angle(&angle);
+    if (err) {
+        debug("couldn't measure angle: %d", err);
+        return err;
+    }
+
+    measurements_push(m, &(struct measurement){.angle = angle});
+
+    return 0;
+}
+
+static int send_measurements(struct measurements *m) {
+    int err = 0;
+    char *buffer = NULL;
+    size_t len = 0;
+
+    FILE *f = open_memstream(&buffer, &len);
+    if (f == NULL) {
+        debug("open_memstream: %s", strerror(errno));
+        err = -errno;
+        goto done;
+    }
+
+    err = measurements_to_json(m, f);
+    if (err) {
+        goto done;
+    }
+
+    fflush(f);
+
+    struct http_request req = {
+        .hostname = "192.168.86.92",
+        .port = "8080",
+        .path = "/path",
+
+        .content_type = "application/json",
+        .len = len,
+        .body = buffer,
+    };
+    struct http_response resp = {0};
+
+    err = http_post(&req, &resp);
+    if (err) {
+        debug("failed to make http request: %d", err);
+        goto done;
+    }
+
+    if (http_is_success(&resp)) {
+        measurements_clear(m);
+    } else {
+        debug("got non-successful response: status=%d", resp.status_code);
+    }
+
+done:
+    if (f != NULL) {
+        fclose(f);
+    }
+    free(buffer);
+    return err;
+}
+
 void blink(void *pvParameters)
 {
     vTaskDelay(10000 / portTICK_PERIOD_MS);
@@ -72,46 +137,16 @@ void blink(void *pvParameters)
 
     mpu_init();
 
+    int err = 0;
     while(1) {
-
-        float angle = 0;
-        measure_angle(&angle);
-
-        measurements_push(m, &(struct measurement){.angle = angle});
-
-        char *buffer = NULL;
-        size_t len = 0;
-
-        FILE *f = open_memstream(&buffer, &len);
-        if (f == NULL) {
-            debug("open_memstream: %s", strerror(errno));
-            return;
-        }
-
-        int err = measurements_to_json(m, f);
+        err = make_measurements(m);
         if (err) {
-            return;
+            debug("make_measurements error: %d", err);
         }
 
-        fflush(f);
-        fclose(f);
-
-        struct http_request req = {
-            .hostname = "192.168.86.92",
-            .port = "8080",
-            .path = "/path",
-
-            .content_type = "application/json",
-            .len = len,
-            .body = buffer,
-        };
-        struct http_response resp = {0};
-        err = http_post(&req, &resp);
-        printf("err = %d\n", err);
-        printf("status = %d\n", resp.status_code);
-
-        if (resp.status_code == 200) {
-            measurements_clear(m);
+        err = send_measurements(m);
+        if (err) {
+            debug("send_measurements error: %d", err);
         }
 
         vTaskDelay(1000 / portTICK_PERIOD_MS);
