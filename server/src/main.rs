@@ -3,6 +3,7 @@ use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 struct Measurement {
+    timestamp: u64,
     angle: f64,
     temp: f64,
 }
